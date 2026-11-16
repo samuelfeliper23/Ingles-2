@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#111827">
+  <title>Prediction | Questionário</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #151d32;
+      --panel-2: #1c2741;
+      --text: #f4f7ff;
+      --muted: #aab5cc;
+      --accent: #8b7cff;
+      --accent-2: #54d6bd;
+      --wrong: #ff7185;
+      --border: rgba(255,255,255,.11);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; padding: 28px 16px;
+      background: radial-gradient(circle at 15% 0%, #25245a 0, transparent 36%),
+                  radial-gradient(circle at 100% 90%, #123d4b 0, transparent 30%), var(--bg);
+      color: var(--text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    .wrap { width: min(760px, 100%); margin: 0 auto; }
+    header { text-align: center; margin: 12px 0 26px; }
+    .eyebrow { color: var(--accent-2); font-size: .78rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { margin: 10px 0 8px; font-size: clamp(2rem, 7vw, 3.3rem); letter-spacing: -.045em; }
+    .subtitle { color: var(--muted); margin: 0; line-height: 1.6; }
+    .card {
+      background: rgba(21,29,50,.94); border: 1px solid var(--border);
+      border-radius: 22px; padding: clamp(20px, 5vw, 32px);
+      box-shadow: 0 22px 70px rgba(0,0,0,.28);
+    }
+    .topline { display:flex; justify-content:space-between; gap:12px; color:var(--muted); font-size:.9rem; margin-bottom:13px; }
+    .track { height:8px; background:#29334c; border-radius:99px; overflow:hidden; margin-bottom:26px; }
+    .bar { height:100%; width:0; background:linear-gradient(90deg,var(--accent),var(--accent-2)); transition:width .25s; }
+    .question { font-size:1.25rem; line-height:1.45; margin:0 0 20px; }
+    .options { display:grid; gap:11px; }
+    .option {
+      width:100%; text-align:left; color:var(--text); background:var(--panel-2);
+      border:1px solid var(--border); border-radius:14px; padding:15px 16px;
+      font:inherit; cursor:pointer; transition:.18s; display:flex; gap:12px; align-items:center;
+    }
+    .option:hover:not(:disabled) { border-color:var(--accent); transform:translateY(-1px); }
+    .letter {
+      flex:0 0 30px; height:30px; display:grid; place-items:center; border-radius:9px;
+      background:rgba(255,255,255,.08); color:#dce3f5; font-weight:800;
+    }
+    .option.correct { border-color:var(--accent-2); background:rgba(84,214,189,.12); }
+    .option.incorrect { border-color:var(--wrong); background:rgba(255,113,133,.11); }
+    .option:disabled { cursor:default; }
+    .feedback { min-height:26px; margin:16px 0 0; color:var(--muted); line-height:1.5; }
+    .actions { display:flex; justify-content:space-between; gap:12px; margin-top:22px; }
+    button.primary, button.secondary {
+      border:0; border-radius:12px; padding:13px 19px; font:inherit; font-weight:800; cursor:pointer;
+    }
+    button.primary { background:linear-gradient(100deg,var(--accent),#6c9cff); color:white; margin-left:auto; }
+    button.primary:disabled { opacity:.4; cursor:not-allowed; }
+    button.secondary { background:#29334c; color:var(--text); }
+    .result { text-align:center; }
+    .score { font-size:clamp(3rem,12vw,5rem); font-weight:900; letter-spacing:-.06em; margin:12px 0 0; }
+    .result p { color:var(--muted); line-height:1.6; }
+    .review { text-align:left; margin-top:25px; display:grid; gap:10px; }
+    .review-item { padding:13px 15px; border-radius:12px; background:var(--panel-2); border:1px solid var(--border); }
+    .review-item strong { display:block; margin-bottom:5px; }
+    .good { color:var(--accent-2); } .bad { color:var(--wrong); }
+    .hidden { display:none; }
+    footer { text-align:center; color:#78849e; font-size:.8rem; margin:20px 0 0; }
+    @media(max-width:480px) { body{padding:18px 12px}.actions{flex-direction:column-reverse}.actions button{width:100%}.topline{font-size:.82rem} }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <div class="eyebrow">English • Grammar</div>
+      <h1>Prediction</h1>
+      <p class="subtitle">Teste seus conhecimentos sobre como fazer previsões em inglês.</p>
+    </header>
+
+    <section class="card" id="quiz">
+      <div class="topline"><span id="counter">Questão 1 de 8</span><span id="progressText">0% concluído</span></div>
+      <div class="track"><div class="bar" id="progress"></div></div>
+      <h2 class="question" id="question"></h2>
+      <div class="options" id="options"></div>
+      <p class="feedback" id="feedback" aria-live="polite"></p>
+      <div class="actions">
+        <button class="secondary" id="restart" type="button">Recomeçar</button>
+        <button class="primary" id="next" type="button" disabled>Próxima questão</button>
+      </div>
+    </section>
+
+    <section class="card result hidden" id="result">
+      <div class="eyebrow">Questionário finalizado</div>
+      <h2>Seu resultado</h2>
+      <div class="score" id="score">0/8</div>
+      <p id="message"></p>
+      <div class="review" id="review"></div>
+      <div class="actions"><button class="primary" id="again" type="button">Refazer questionário</button></div>
+    </section>
+    <footer>Leia cada situação com atenção e escolha a melhor previsão.</footer>
+  </main>
+
+<script>
+const questions = [
+  {
+    q: 'Look at those dark clouds! It _____ rain soon.',
+    options: ['will', 'is going to', 'going', 'was'],
+    answer: 1,
+    explanation: '“Is going to” é usado para uma previsão baseada em evidências visíveis — neste caso, as nuvens escuras.'
+  },
+  {
+    q: 'I think people _____ use more renewable energy in the future.',
+    options: ['are', 'did', 'will', 'have'],
+    answer: 2,
+    explanation: '“Will” é comum em previsões e opiniões sobre o futuro, especialmente depois de “I think”.'
+  },
+  {
+    q: 'She studied very hard. I’m sure she _____ pass the exam.',
+    options: ['will', 'is', 'does', 'has'],
+    answer: 0,
+    explanation: '“Will pass” expressa uma previsão ou opinião sobre o resultado futuro.'
+  },
+  {
+    q: 'The team is 3–0 ahead with one minute left. They _____ win.',
+    options: ['won’t', 'are going to', 'were', 'winning'],
+    answer: 1,
+    explanation: '“Are going to” funciona bem porque há evidências na situação que apontam para essa previsão.'
+  },
+  {
+    q: 'Which sentence expresses a prediction?',
+    options: [
+      'I am doing my homework now.',
+      'She went to school yesterday.',
+      'They will probably travel next year.',
+      'He plays soccer every Saturday.'
+    ],
+    answer: 2,
+    explanation: '“Will probably travel next year” faz uma previsão sobre algo que pode acontecer no futuro.'
+  },
+  {
+    q: 'Choose the correct negative prediction: “I’m sure it _____ be easy.”',
+    options: ['doesn’t', 'won’t', 'isn’t', 'wasn’t'],
+    answer: 1,
+    explanation: 'A forma negativa de “will” é “will not” ou “won’t”.'
+  },
+  {
+    q: '“Maybe robots _____ do more tasks in our homes.”',
+    options: ['will', 'are', 'did', 'has'],
+    answer: 0,
+    explanation: '“Will” é usado para falar de uma possibilidade ou previsão futura.'
+  },
+  {
+    q: 'What is the main purpose of making a prediction?',
+    options: [
+      'To describe something that happened in the past',
+      'To give an instruction',
+      'To say what may happen in the future',
+      'To describe a daily routine'
+    ],
+    answer: 2,
+    explanation: 'Uma prediction é uma previsão: uma ideia sobre o que pode acontecer no futuro.'
+  }
+];
+
+let current = 0;
+let answers = Array(questions.length).fill(null);
+let locked = false;
+
+const questionEl = document.getElementById('question');
+const optionsEl = document.getElementById('options');
+const feedbackEl = document.getElementById('feedback');
+const nextBtn = document.getElementById('next');
+
+function renderQuestion() {
+  locked = false;
+  const item = questions[current];
+  document.getElementById('counter').textContent = `Questão ${current + 1} de ${questions.length}`;
+  const pct = Math.round((current / questions.length) * 100);
+  document.getElementById('progressText').textContent = `${pct}% concluído`;
+  document.getElementById('progress').style.width = `${pct}%`;
+  questionEl.textContent = item.q;
+  optionsEl.innerHTML = '';
+  feedbackEl.textContent = '';
+  nextBtn.disabled = true;
+  nextBtn.textContent = current === questions.length - 1 ? 'Ver resultado' : 'Próxima questão';
+
+  item.options.forEach((option, index) => {
+    const button = document.createElement('button');
+    button.className = 'option';
+    button.type = 'button';
+    const letter = document.createElement('span');
+    letter.className = 'letter';
+    letter.textContent = String.fromCharCode(65 + index);
+    const label = document.createElement('span');
+    label.textContent = option;
+    button.append(letter, label);
+    button.addEventListener('click', () => chooseAnswer(index));
+    optionsEl.appendChild(button);
+  });
+}
+
+function chooseAnswer(index) {
+  if (locked) return;
+  locked = true;
+  answers[current] = index;
+  const item = questions[current];
+  [...optionsEl.children].forEach((button, i) => {
+    button.disabled = true;
+    if (i === item.answer) button.classList.add('correct');
+    if (i === index && index !== item.answer) button.classList.add('incorrect');
+  });
+  const isCorrect = index === item.answer;
+  feedbackEl.textContent = `${isCorrect ? 'Correto!' : 'Não foi dessa vez.'} ${item.explanation}`;
+  feedbackEl.style.color = isCorrect ? 'var(--accent-2)' : 'var(--wrong)';
+  nextBtn.disabled = false;
+}
+
+nextBtn.addEventListener('click', () => {
+  if (answers[current] === null) return;
+  if (current < questions.length - 1) {
+    current++;
+    renderQuestion();
+  } else {
+    showResult();
+  }
+});
+
+function showResult() {
+  const total = answers.reduce((sum, answer, i) => sum + (answer === questions[i].answer ? 1 : 0), 0);
+  document.getElementById('quiz').classList.add('hidden');
+  document.getElementById('result').classList.remove('hidden');
+  document.getElementById('score').textContent = `${total}/${questions.length}`;
+  const percent = Math.round(total / questions.length * 100);
+  document.getElementById('message').textContent =
+    percent === 100 ? 'Excelente! Você acertou todas as questões.' :
+    percent >= 75 ? 'Muito bem! Você demonstrou um ótimo entendimento.' :
+    percent >= 50 ? 'Bom trabalho! Revise as explicações para melhorar ainda mais.' :
+    'Continue praticando! Revise as explicações e tente novamente.';
+  const review = document.getElementById('review');
+  review.innerHTML = '';
+  questions.forEach((item, i) => {
+    const div = document.createElement('div');
+    div.className = 'review-item';
+    const status = answers[i] === item.answer;
+    const title = document.createElement('strong');
+    title.className = status ? 'good' : 'bad';
+    title.textContent = `Questão ${i + 1} — ${status ? 'Acertou' : 'Errou'}`;
+    const detail = document.createElement('div');
+    detail.textContent = `Sua resposta: ${item.options[answers[i]]} | Correta: ${item.options[item.answer]}`;
+    div.append(title, detail);
+    review.appendChild(div);
+  });
+  document.getElementById('progress').style.width = '100%';
+}
+
+function restart() {
+  current = 0;
+  answers = Array(questions.length).fill(null);
+  document.getElementById('result').classList.add('hidden');
+  document.getElementById('quiz').classList.remove('hidden');
+  renderQuestion();
+}
+document.getElementById('restart').addEventListener('click', restart);
+document.getElementById('again').addEventListener('click', restart);
+renderQuestion();
+</script>
+</body>
+</html>
